@@ -4,9 +4,6 @@
 
 Integriere ActiveCampaign nahtlos in deine Contao-Website – ganz ohne externe Tracking-Skripte oder Widgets!
 
-Version:** 1.0.0  
-Lizenz:** MIT  
-Kompatibilität:** Contao 4.13+ / 5.3+ | PHP 8.2+
 ---
 
 ## Features
