@@ -1,0 +1,120 @@
+# File: vendor/con2net/contao-activecampaign-bundle/src/Resources/config/services.yml
+
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  # Services automatisch registrieren
+  # WICHTIG: Controller ausschließen wegen expliziter Definition unten
+  Con2net\ContaoActiveCampaignBundle\:
+    resource: '../../'
+    exclude:
+      - '../../ContaoManager'
+      - '../../Resources'
+      - '../../Migration'
+      - '../../Helper'
+      - '../../Controller'
+
+  # ==========================================================================
+  # SERVICES
+  # ==========================================================================
+
+  # ActiveCampaign API Service
+  Con2net\ContaoActiveCampaignBundle\Service\ActiveCampaignService:
+    arguments:
+      $apiUrl: '%con2net.activecampaign.api_url%'
+      $apiKey: '%con2net.activecampaign.api_key%'
+      $logger: '@monolog.logger.activecampaign'
+
+  # Delayed Transfer Storage Service
+  Con2net\ContaoActiveCampaignBundle\Service\DelayedTransferStorage:
+    arguments:
+      $connection: '@doctrine.dbal.default_connection'
+      $logger: '@monolog.logger.activecampaign'
+
+  # Token Generator Service
+  Con2net\ContaoActiveCampaignBundle\Service\TokenGenerator: ~
+
+  # ==========================================================================
+  # CONTROLLER (explizit definiert)
+  # ==========================================================================
+
+  # Transfer Controller für Delayed Transfer Links
+  Con2net\ContaoActiveCampaignBundle\Controller\TransferController:
+    arguments:
+      $storage: '@Con2net\ContaoActiveCampaignBundle\Service\DelayedTransferStorage'
+      $activeCampaignService: '@Con2net\ContaoActiveCampaignBundle\Service\ActiveCampaignService'
+      $logger: '@monolog.logger.activecampaign'
+    public: true
+    tags: ['controller.service_arguments']
+
+  # Fields View Controller für Backend
+  Con2net\ContaoActiveCampaignBundle\Controller\FieldsViewController:
+    arguments:
+      $apiUrl: '%con2net.activecampaign.api_url%'
+      $apiKey: '%con2net.activecampaign.api_key%'
+      $logger: '@monolog.logger.activecampaign'
+    public: true
+    tags: ['controller.service_arguments']
+
+  # Content Element Controller
+  Con2net\ContaoActiveCampaignBundle\Controller\ContentElement\ActiveCampaignFormElementController:
+    tags:
+      - { name: contao.content_element, category: includes, type: activecampaign_form, template: ce_activecampaign_form }
+
+  # ==========================================================================
+  # HOOK LISTENER
+  # ==========================================================================
+
+  # 1. PrepareTransferTokenListener (Priority 50)
+  #    - Läuft VOR E-Mail
+  #    - Generiert Token
+  Con2net\ContaoActiveCampaignBundle\EventListener\PrepareTransferTokenListener:
+    arguments:
+      $tokenGenerator: '@Con2net\ContaoActiveCampaignBundle\Service\TokenGenerator'
+      $connection: '@doctrine.dbal.default_connection'
+      $logger: '@monolog.logger.activecampaign'
+    tags:
+      - { name: contao.hook, hook: prepareFormData, priority: 50 }
+      - { name: monolog.logger, channel: activecampaign }
+
+  # 2. FormSubmitListener (Priority 0)
+  #    - Läuft NACH E-Mail
+  #    - Speichert Daten in DB
+  Con2net\ContaoActiveCampaignBundle\EventListener\FormSubmitListener:
+    arguments:
+      $activeCampaignService: '@Con2net\ContaoActiveCampaignBundle\Service\ActiveCampaignService'
+      $storage: '@Con2net\ContaoActiveCampaignBundle\Service\DelayedTransferStorage'
+      $logger: '@monolog.logger.activecampaign'
+      $framework: '@contao.framework'
+    tags:
+      - { name: contao.hook, hook: processFormData, priority: 0 }
+      - { name: monolog.logger, channel: activecampaign }
+
+  # Insert-Tag Hook
+  Con2net\ContaoActiveCampaignBundle\EventListener\InsertTagListener:
+    tags:
+      - { name: contao.hook, hook: replaceInsertTags }
+
+  # ==========================================================================
+  # CALLBACKS
+  # ==========================================================================
+
+  # Callback für Formular-Auswahl im Backend
+  con2net.activecampaign.form_callback:
+    class: Con2net\ContaoActiveCampaignBundle\EventListener\FormOptionsCallback
+    public: true
+
+  # ==========================================================================
+  # COMMANDS
+  # ==========================================================================
+
+  # Debug Command
+  Con2net\ContaoActiveCampaignBundle\Command\DebugFieldsCommand:
+    arguments:
+      $apiUrl: '%con2net.activecampaign.api_url%'
+      $apiKey: '%con2net.activecampaign.api_key%'
+    tags:
+      - { name: console.command }

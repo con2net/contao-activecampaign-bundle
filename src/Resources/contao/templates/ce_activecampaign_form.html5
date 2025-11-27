@@ -1,0 +1,166 @@
+<?php $this->extend('block_searchable'); ?>
+
+<?php $this->block('content'); ?>
+
+<?php if ($this->noForm): ?>
+    <div class="ce_activecampaign_form error">
+        <p class="info">Bitte wählen Sie ein Formular aus.</p>
+    </div>
+<?php else: ?>
+    <div class="ce_activecampaign_form" data-form-id="<?= $this->formId ?>" data-ac-wrapper>
+
+        <?= $this->form ?>
+
+        <!-- Loading Overlay (nur für Contao 4.13 / Non-AJAX) -->
+        <div class="ac-form-overlay" style="display: none;" data-ac-spinner>
+            <div class="ac-spinner"></div>
+            <p>Daten werden übermittelt...</p>
+        </div>
+    </div>
+
+    <style>
+        .ce_activecampaign_form {
+            position: relative;
+        }
+
+        .ac-form-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            border-radius: 4px;
+        }
+
+        .ac-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: ac-spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes ac-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .ac-form-overlay p {
+            color: #333;
+            font-size: 16px;
+            font-weight: 500;
+            margin: 0;
+        }
+    </style>
+
+    <script>
+        (function() {
+            var wrapper = document.querySelector('[data-form-id="<?= $this->formId ?>"][data-ac-wrapper]');
+            var form = wrapper ? wrapper.querySelector('form') : null;
+            var spinner = wrapper ? wrapper.querySelector('[data-ac-spinner]') : null;
+
+            if (!form) return;
+
+            // JavaScript-Token erstellen
+            var tokenField = document.createElement('input');
+            tokenField.type = 'hidden';
+            tokenField.name = 'page_hash';
+            tokenField.value = 'js_verified_' + Math.random().toString(36).substr(2, 12);
+            form.insertBefore(tokenField, form.firstChild);
+
+            // Timestamp erstellen
+            var timestampField = document.createElement('input');
+            timestampField.type = 'hidden';
+            timestampField.name = 'c2n_client_time';
+            timestampField.value = new Date().getTime().toString();
+            form.insertBefore(timestampField, form.firstChild);
+
+            // AJAX-Detection: Contao 5.3 hat data-ajax-form Attribut
+            var isAjaxForm = form.hasAttribute('data-ajax-form');
+
+            if (isAjaxForm) {
+                // Contao 5.3 AJAX-Modus
+                console.log('✓ Contao 5.3 AJAX detected');
+
+                // Spinner bei AJAX-Loading zeigen
+                form.addEventListener('ajax-form-onload', function(e) {
+                    // Spinner ausblenden wenn Response da ist
+                    if (spinner) {
+                        spinner.style.display = 'none';
+                    }
+                });
+
+                // Spinner bei Submit zeigen (optional - Contao hat eigenes Loading-Feedback)
+                var originalSubmit = form.onsubmit;
+                form.addEventListener('submit', function(e) {
+                    // Nur Spinner zeigen wenn kein Error
+                    if (!form.querySelector('.error, .formbody .error')) {
+                        if (spinner) {
+                            spinner.style.display = 'flex';
+                        }
+                    }
+                });
+
+            } else {
+                // Contao 4.13 NON-AJAX Modus
+                console.log('✓ Contao 4.13 Non-AJAX mode');
+
+                if (spinner) {
+                    form.addEventListener('submit', function(e) {
+                        spinner.style.display = 'flex';
+
+                        var submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                        }
+
+                        // Formular nach erfolgreicher Übermittlung zurücksetzen
+                        setTimeout(function() {
+                            window.addEventListener('pageshow', function(event) {
+                                if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                                    return;
+                                }
+
+                                if (form && !wrapper.querySelector('.error, .formbody .error')) {
+                                    form.reset();
+
+                                    var checkboxes = form.querySelectorAll('input[type="checkbox"], input[type="radio"]');
+                                    checkboxes.forEach(function(cb) {
+                                        cb.checked = false;
+                                    });
+
+                                    var selects = form.querySelectorAll('select');
+                                    selects.forEach(function(select) {
+                                        select.selectedIndex = 0;
+                                    });
+                                }
+                            });
+                        }, 100);
+                    });
+
+                    // Spinner bei Fehler wieder ausblenden
+                    window.addEventListener('load', function() {
+                        if (wrapper.querySelector('.error, .formbody .error')) {
+                            spinner.style.display = 'none';
+                            var submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                            }
+                        }
+                    });
+                }
+            }
+        })();
+    </script>
+
+<?php endif; ?>
+
+<?php $this->endblock(); ?>

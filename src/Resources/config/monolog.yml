@@ -1,0 +1,16 @@
+# Datei: src/Resources/config/monolog.yml
+# Konfiguriert einen eigenen Log-Channel für ActiveCampaign
+
+monolog:
+  channels:
+    - activecampaign
+
+  handlers:
+    # Handler für ActiveCampaign Logs
+    activecampaign:
+      type: rotating_file
+      path: '%kernel.logs_dir%/activecampaign.log'
+      level: debug
+      channels: [activecampaign]
+      max_files: 14
+      formatter: monolog.formatter.line

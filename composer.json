@@ -1,0 +1,28 @@
+{
+  "name": "con2net/contao-activecampaign-bundle",
+  "type": "contao-bundle",
+  "description": "ActiveCampaign Bundle - DSGVO-konforme API-Integration mit optionaler manueller Übertragung",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "connect2Net webServices",
+      "homepage": "https://www.connect2net.de"
+    }
+  ],
+  "require": {
+    "php": "^8.2 || ^8.3",
+    "contao/core-bundle": "^4.13 || ^5.0",
+    "symfony/framework-bundle": "^4.4 || ^5.4 || ^6.0 || ^7.0"
+  },
+  "suggest": {
+    "con2net/contao-anti-spam-form-bundle": "Adds professional spam protection before sending to ActiveCampaign"
+  },
+  "autoload": {
+    "psr-4": {
+      "Con2net\\ContaoActiveCampaignBundle\\": "src/"
+    }
+  },
+  "extra": {
+    "contao-manager-plugin": "Con2net\\ContaoActiveCampaignBundle\\ContaoManager\\Plugin"
+  }
+}

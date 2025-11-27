@@ -1,0 +1,15 @@
+# File: vendor/con2net/contao-activecampaign-bundle/src/Resources/config/routes.yml
+
+activecampaign_transfer:
+  path: /activecampaign/transfer/{token}
+  controller: Con2net\ContaoActiveCampaignBundle\Controller\TransferController::execute
+  defaults:
+    _scope: frontend
+  requirements:
+    token: '[a-zA-Z0-9_-]{16,64}'
+
+activecampaign_fields:
+  path: /activecampaign/fields
+  controller: Con2net\ContaoActiveCampaignBundle\Controller\FieldsViewController::view
+  defaults:
+    _scope: frontend
