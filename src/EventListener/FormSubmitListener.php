@@ -55,9 +55,10 @@ class FormSubmitListener
 
         $this->log('FormSubmitListener called for form ' . $formId, __METHOD__);
 
-        // Config aus submittedData (von PrepareTransferTokenListener gesetzt)
-        // ODER aus GLOBALS (falls Content Element den GET-Request bedient hat)
+        // Config aus submittedData (wurde von PrepareTransferTokenListener gesetzt)
+        // ODER aus GLOBALS (falls CleanupListener es entfernt hat)
         $config = $submittedData['_ac_config']
+            ?? $GLOBALS['ACTIVECAMPAIGN_CONFIG']
             ?? $GLOBALS['ACTIVECAMPAIGN_FORMS'][$formId]
             ?? null;
 
@@ -145,9 +146,14 @@ class FormSubmitListener
         array $config,
         bool $isSpam
     ): void {
-        // Token aus submittedData (von PrepareTransferTokenListener gesetzt)
-        $token = $submittedData['_ac_transfer_token'] ?? null;
-        $transferUrl = $submittedData['_ac_transfer_url'] ?? null;
+        // Token aus submittedData ODER GLOBALS (Fallback nach CleanupListener)
+        $token = $submittedData['_ac_transfer_token']
+            ?? $GLOBALS['ACTIVECAMPAIGN_TRANSFER_TOKEN']
+            ?? null;
+
+        $transferUrl = $submittedData['_ac_transfer_url']
+            ?? $GLOBALS['ACTIVECAMPAIGN_TRANSFER_URL']
+            ?? null;
 
         if (!$token || !$transferUrl) {
             $this->log(

@@ -118,3 +118,7 @@ services:
       $apiKey: '%con2net.activecampaign.api_key%'
     tags:
       - { name: console.command }
+
+  # Cleanup Listener - entfernt technische Felder aus ##raw_data##
+  Con2net\ContaoActiveCampaignBundle\EventListener\CleanupFormDataListener:
+    autowire: false
